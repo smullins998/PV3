@@ -1,0 +1,284 @@
+
+{% extends "main.html" %}
+
+
+{% block sidebarstart %}
+
+<div class="content-div">
+<h2>Adverse-Event Impact on Equities: Reverse Momentum</h2>
+<h5>Posted 07/08/2023</h5>
+<div class="content1">
+  <div class="row1">
+    <div class="col1">
+      <div class="subheader1">Introduction</div>
+
+      <div class="text1">
+       
+        Our world is becoming increasingly connected; we are now able to buy or sell equities within seconds, thanks to simple-to-use platforms, internet speeds, and smartphones.
+        Consequently, people are more connected and active about how frequently they trade, leading to more severe reactions to events as people can now easily get in or out of a position. COVID has accelerated this reactionary environment, leading to heighted market deviations in 2020, 2021, and 2022.
+        We are going to create a backtest to try to understand if there is a pattern of overselling and recovery after adverse events such as negative earnings, industry concerns, and major geopolitical events. 
+      </div>
+      <ul>
+        <li>
+         <p>Ho:</p> Markets are efficient, and Equities reflect the correct market value at any given time, specifically off the back of major events.
+        </li>
+        <li>
+         <p>Ha:</p> Equities tend to be oversold on the back of a major event (poor earnings, negative news, economic factors). 
+        </li>
+      </ul>
+      <div class="text1">
+        This idea was formed based on empirical evidence from COVID, and the recent Silicon Valley banking crisis. Our hypothesis is setup to test if, on average, there is a significant recovery in equities the day after an adverse event.
+      </div>
+      <div class="subheader1">Data Used</div>
+     <div></div>
+     <div class="text1">
+      We gather closing data for all equities listed in the US and create a back-testing period from 2010 to the present.
+     </div>
+     <pre>
+      <code class="language-python">
+import yfinance as yf 
+from tqdm import tqdm 
+import pandas as pd 
+
+x=0 
+
+for i in tqdm(ticker_list): 
+
+  if x==0:
+      temp_df = yf.download('AAPL').Close 
+      temp_df = pd.DataFrame(temp_df) 
+      temp_df = temp_df.rename(columns={'Close':"AAPL"}) 
+      x+=1 
+  if x>0: 
+      temp_df1 = yf.download(i).Close 
+      temp_df1 = pd.DataFrame(temp_df1) 
+      temp_df1 = temp_df1.rename(columns={'Close':i}) 
+
+      temp_df = temp_df.merge(temp_df1, how='left',left_index=True, right_index=True)
+      </code>
+      </pre>
+
+     <div class="text1">
+      We can generate summary statistics for each equity and generate a histogram of the return profile for the group. This shape will ultimately resemble the market; returns will be random.
+     </div>
+     <img src="/static/pictures/NASDAQ_ret.png" alt="">
+     <div class="text1">
+       Volitility of individual equities will affect our strategy, most likely in an unexpected way, so we are going to filter out less mature stocks. We will keep equities with at least 400 trading days and a return standard deviation of less than 5%. This will eliminate recently IPO'd equities that may have massive daily swings.
+     </div>
+     <div class="subheader1">Statistical Test</div>
+     <div class="text1">
+      We will setup a hypothesis test to see if the returns from our strategy are significantly different from the population of all other equity returns. We will buy the equity if there is a single-day return of less than -10%, and sell it the next day. This is an arbitrary percent-decline number, but I believe it represents a reaction to a major event; it is possible to increase this threshold to see if recoveries become more potent.  The idea, as previously described, is to benefit off an oversold stock by buying at the end of the market-day and selling the day after. Here is the buy logic for each equity:
+     </div>
+     <ul>
+      <li>
+       <p>Std </p>  < 5% & <p> Trading Days </p>   > 400
+      </li>
+      <li>
+        <p>Single-Day return </p>  < -10%
+      </li>
+     </ul>
+     <pre>
+      <code class="language-python">
+import numpy as np
+from scipy import stats
+from scipy.stats import norm
+
+Ticker = []
+Date = []
+ret = []
+after_ret = []
+
+for b, c in zip(range(len(SS_df.columns)), SS_df.columns):
+  for j,k,l in zip(SS_df.iloc[:,b], SS_df.iloc[1:,b], SS_df.index):
+      if j <= -.1:
+          ret.append(j)
+          after_ret.append(k)
+          Date.append(l)
+          Ticker.append(c)    
+                     
+RET_df = pd.DataFrame({'Date': Date, 'Ticker': Ticker, 'Return': ret, 'NextReturn': after_ret})
+      </code>
+     </pre>
+    </div>
+    <div class="col1">
+      <img src="/static/pictures/samplevrandom.png" alt=""
+>
+      <div class="text1">
+        We have now taken each return that is less than -10% out of our population, and created  <code>RET_df</code>. 
+        We can visualize the returns of our strategy to the market (population), and we can see that our strategy output has a very large relative standard deviation compared to the population, but also has a left skew, signaling larger trade returns.  Let's implement a Z test between the population and sample means to find out if the sample returns are statistically significant.
+      </div>
+      <ul>
+        <li>
+        <p>Z  </p> = (X - u) / (std / sqtr(n))
+      </li>
+    
+      <li>
+        <p>P_val  </p> = 1 - norm.cdf(z)
+      </li>
+        <li>
+        <p>Sample Mean: </p>0.331 %
+        </li>
+        <li>
+        <p>Sample Std:</p>   3.321  %
+        </li>
+        <li>
+          <p>Population Mean: </p>  0.061 %
+        </li>
+        <li>
+          <p>Population Std: </p> 2.229 % 
+        </li>
+        <li>
+          <p>Z-score: </p> 7.126 
+        </li>
+        <li>
+          <p>P-val: </p> 0.1 %
+        </li>
+      </ul>
+      <div class="text1">
+        Looking at the sample's standard deviation, this strategy is very risky, with 95% of daily returns ranging from +7% to -6%, but the model also tells us that the difference between the two means is significant - the strategy is different from taking a random sample of the population - and we can reject the null hypothesis and say that there is a recovery in stocks which decline heavily.
+      </div>
+      <img src="/static/pictures/Cumret2023.png" alt="">
+        <ul>
+          <li>
+        <p>2023 Cumulative Return: </p> ~40% 
+          </li>
+          <li>
+        <p>2023 Num Trades: </p> 172
+          </li>
+       </ul>
+
+      <div class="text1">
+        The strategy outperformed the S&P500 in 62% of the quarters dating back to 2010, and is currently outperforming in 2023 through June.
+      </div>
+   
+      <div class="text1">
+        When we break our returns out monthly instead of quarterly or annually, they are seldom statistically significant, meaning that there is an inconsistency to the return profile; it may be a few good quarters that explain the overall positivity. This tells us that this strategy may be more effective in the right market conditions.           We can run a regression to see if this strategy generates alpha. Market returns (X) are plotted against strategy returns (y).
+      </div>
+    <ul>
+      <li>
+    <p>Alpha </p> .30%
+      </li>
+      <li>
+    <p>Beta </p>  -.15
+      </li>
+      <li>
+        <p>P-Val </p> .76
+      </li>
+   </ul>
+    </div>
+    <div class="col1">  
+      <div class="text1">
+        We obtain an insignificant alpha, which may mean that additional factors, not the market, explain the high mean returns of the strategy.
+      </div>          
+      <div class="subheader1">Other Variables</div>
+      
+      <div class="text1">
+        We can look for additional variables to refine returns, and further experiment with the strategy.
+      </div>
+      <img src="/static/pictures/pop_v_mean.png" alt=""
+      >
+
+      <div class="text1">
+        One statistic that stood out was the sample return's correlation to the population's standard deviation (+62%).
+        As we can see by the red regression line, this means that when the market is more volitile, this strategy usually performs better. This was evident in COVID and other crises; PACW declined -45% on May 4th, 2023, and returned +80% the following day; there is usually a shocking event, followed by relief because often times the government steps in or other entities help, and 99% of the time, the world is not going to end. If it does, well, there will be no market anyway!
+      </div>
+      <div class="text1">
+        We can take looks at other filters of the historical data: What happens when the investment period is two days, instead of intraday? What if we were more selective about the companies we traded?
+      </div>
+
+      <div class="subheader1">Results and Implimentation</div>
+      <div class="text1">
+        To impliment this strategy, we can simply use the Robinhood (unofficial) API to get prospective stocks and trigger trades at the market day close.
+      </div>
+      
+      <pre>
+        <code class="language-python">
+def GetBuyStocks():
+ticker_ret = []
+ticker_loop = []
+
+#Get pct_change data for all tickers
+for i in tqdm(tickers.Symbol):
+    try:
+        today = datetime.today().strftime('%Y-%m-%d')
+        previous_day = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+        stock = yf.Ticker(i)
+        history = stock.history(period='5d')
+
+        today_close_price = history['Close'][-1]
+        previous_close_price = history['Close'][-2]
+
+        percent_change = ((today_close_price - previous_close_price) / previous_close_price) * 100
+
+        ticker_ret.append(percent_change)
+        ticker_loop.append(i)
+    except:
+        print('error with', i)
+
+daily_ret_df = pd.DataFrame({'Ticker': ticker_loop, 'pctchange': ticker_ret})
+daily_ret_df = daily_ret_df[daily_ret_df.pctchange < -10]
+final_list = []
+#Logic to filter stocks
+for j in daily_ret_df.Ticker:
+    
+    mkt_cap = float(r.get_fundamentals(j)[0]['market_cap'])
+
+    if mkt_cap > 5e+9:
+        final_list.append(j)
+    else:
+        pass
+    
+return final_list   
+
+def Equity_Amt():
+return r.load_account_profile()['portfolio_cash']
+
+def Buy_df():
+  BuyStocks = GetBuyStocks()
+  Cash = float(Equity_Amt())
+  cur_prices = [yf.download(i).Close[-1] for i in BuyStocks]
+
+  buy_df = pd.DataFrame({'Tickers':BuyStocks, 'Price': cur_prices})
+  #Invest only 1/5th of the portfolio in a trade. 
+  if len(BuyStocks) > 5:
+      buy_df['Quantity'] = (Cash / len(BuyStocks)) / buy_df.Price
+  else:
+      buy_df['Quantity'] = (Cash / 3) / buy_df.Price
+      
+  return buy_df
+      
+def Buy(tick, num_shares):
+  r.order_buy_fractional_by_quantity(tick, num_shares)
+  
+def Sell(tick, num_shares):
+  r.order_sell_fractional_by_quantity(tick, num_shares) 
+  
+def buy_strategy(Buy_df):
+  for i, j in zip(Buy_df.Tickers, Buy_df.Quantity):
+      append_to_text_file('./messages.txt', 'You bought {} shares of {}'.format(j,i))
+      Buy(i, j)
+      
+def sell_strategy(Sell_df):
+  for i, j in zip(Sell_df.index, Sell_df.quantity):
+      append_to_text_file('./messages.txt', 'You sold {} shares of {}'.format(j,i))
+      Sell(i, j)
+        </code>
+      </pre>
+  <div class="text1">
+    We will also run this in the cloud leveraging Python Anywhere's 'tasks' functionality. At the end of the 
+    day (~3:55ET) we will sell our current holdings that were purchased the previous day, and buy the new tickers that satistfy the described conditions.
+  </div>
+</div>
+
+<div class="subheader1">Investment Period</div>
+<div class="text1">
+    The first day of investment in the strategy was July 31st. In the month since, the strategy has returned -15%, which is much lower than the backtest expected. 
+</div>
+<img src="/static/pictures/backtest.png" alt="" style="width: 50vw;">
+<div class="text1">
+    This continues to prove random walk and the difficulty creating a profitable strategy trading equities. This also makes me increasingly skeptical about the statistical test we performed, and how it may have lacked rigor. The Z-score for our sample returns was 7, which is very convincing in theory, but it seems that empiricism, or a bottom-up strategy, would perform better as we see very random returns from this strategy. This is, at least, the case for a simple equity trading strategy which may lack some complexity.  
+</div>
+
+
+  {% endblock %}

@@ -1,0 +1,278 @@
+
+
+{% extends "main.html" %}
+
+
+{% block sidebarstart %}
+
+
+<div class="content-div">
+  <div class="Header1" id="#SongSpy">
+    <h2>Identifying Artificailly Generated Music: <a href="https://smullins.pythonanywhere.com/">SongSpy</a></h2>
+    <h5>Posted 06/05/2023</h5>
+  </div>
+
+  <div class="content1">
+        <div class="subheader1">Introduction</div>
+        <div class="text1">
+          With the recent surge of Artificial Intelligence methods entering
+          popular culture, many individuals and industries are assessing how
+          this revolution will impact them. While it’s anticipated that AI
+          will influence every sector, the audio and entertainment industry
+          is likely to experience significant disruption.
+        </div>
+        <div class="text1">
+          The use of the deep learning model ‘Diff-SVC’ to transform voices of producers and everyday artists into those of their favorite artists has led to a surge in copyright claims. Platforms like YouTube and Soundcloud are now flooded with AI-generated remakes and covers, prompting labels and streaming services to evaluate how to address this new technology. Adding to the disruption, Google engineers have recently published a paper introducing a text-to-audio generator named MusicLM, accompanied by text and audio samples that excel at generating lengthy, continuous music clips.
+
+While some artists embrace this technology and are actively licensing their voices to others, proposing a 50/50 royalty split, others resort to filing copyright claims to have AI-generated music removed — a reasonable thought since training a SVC model requires hours of the artist’s copyrighted music.
+Regardless of an artist’s stance, it may be helpful to implement a flagging system that notifies streaming services when artificially generated tracks utilizing an artist’s voice are uploaded. This would benefit streaming platforms by automatically identifying illegal content and help labels save legal and administrative resources in pursuing copyright claims.
+        </div>
+        <div class="text1">
+          In this article, I will walkthrough the Machine Learning Model behind my web-app SongSpy which identifies artificially generated music for select artists…
+        </div>
+        <div class="subheader1">Feature Extraction </div>
+        <div class="text1">
+          First, we need to source training data, and determine which artists we want to train the model to identify. I took a look on newmusic.ai and found that the most popular artists who were cloned were Drake, The Weekend, Travis Scott, Lil Uzi Vert, and Juice WRLD.
+        </div>
+        <pre>
+          <code class="language-python">
+import pytube
+import os
+from pytube import YouTube
+from pytube.exceptions import VideoUnavailable
+import ssl
+import urllib.request
+
+# Create a custom SSL context
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+ssl._create_default_https_context = ssl._create_unverified_context
+
+playlist_url = "https://www.youtube.com/playlist?list=PLrl4xJK5PokJkobGxk38nvpwaYDazRmqh"
+playlist = pytube.Playlist(playlist_url)
+video_links = playlist.video_urls
+
+for i in video_links:
+    try:
+        url = i
+        yt = pytube.YouTube(url)
+        stream = yt.streams.filter(only_audio=True).first()
+        output_file = 'Uzi Vert'
+        stream.download(output_path=output_file)
+
+        print("Audio downloaded successfully!")
+    except VideoUnavailable:
+        print("The video is unavailable.")
+    except Exception as e:
+        print("An error occurred: ", e)
+          </code>
+          </pre>
+
+        <div class="text1">
+          Now that we have 50–60 songs by each artist in separated folders, we can start to loop through this directory and extract audio features.
+
+          The feature extraction process is somewhat experimental, but the two features I found to perform classification the best are:
+        </div>
+        <ul style="font-size: 15px">
+          <li><p>MFCCs — Mel Frequency Cepstral Coefficients </p></li>
+          <li><p>Spectral Contrast </p></li>
+        </ul>
+        <div class="text1">
+          Both of these features are used heavily in speech recognition and focus on the ‘timbre’ of a voice, not necessarily the pitch. The timbre of an artists voice, or the spectral envelope, is what we are looking to obtain. Other features like BPM, time signature, and spectrogram features are used in genre classification to determine ‘mood’ and ‘energy’, but may not necessarily help to determine what artist a song belongs to.        
+        </div>
+        <pre>
+          <code class="language-python">
+def extract_mfccs(folder_path, artist, label):
+
+  folder_path = folder_path
+
+  for file_name in os.listdir(folder_path):
+      try:
+          file_path = os.path.join(folder_path, file_name)
+          y, sr = librosa.load(file_path, sr=None, duration=100, offset=30)
+
+          mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
+          sc = librosa.feature.spectral_contrast(y=y, sr=sr)  
+          
+          final_json['MFCCs'].append(mfccs)
+          final_json['Spec_Con'].append(sc)
+          final_json['Artist'].append(artist)
+          final_json['Label'].append(label)
+      except:
+          print('Error with {}'.format(file_path))
+          </code>
+        </pre>
+        <div class="text1">
+          Now we will define a function extract_mfccs. The function will loop through all files within a folder and call the librosa.feature.mfcc function from the popular audio manipulation library librosa. The output array for each mfcc extraction is going to be (n_mfcc, t) where t is the number of samples in the audio file. We cut out the first 30 seconds of the audio (offset=30) and make the duration of the clip 100 seconds to make sure each clip has the same number of frames/samples. This will also make sure we are capturing at least one chorus where vocals are present. We extract spectral contrast from the audio which is another way of obtaining the energy distribution across frequency bands. Spectral Contrast focuses more on the relative energy in a band rather than the absolute by applying a weight to emphasize decibel differences that are larger.
+        </div>
+        <pre>
+          <code class="language-python">
+mean_list = []
+variance_list = []
+
+for inner_array in final_json['MFCCs']:
+    for in_array in inner_array:
+        mean_list.append(np.mean(in_array))
+        variance_list.append(np.var(in_array))
+
+num_columns = 40
+
+reshaped_array_mean = np.array(mean_list).reshape(-1, num_columns)
+reshaped_array_var = np.array(variance_list).reshape(-1, num_columns)
+
+mfcc_df_mean = pd.DataFrame(reshaped_array_mean)
+mfcc_df_var = pd.DataFrame(reshaped_array_var)
+
+sc_df = pd.DataFrame([np.mean(inner_array, axis=1) for inner_array in final_json['Spec_Con']])
+    
+label_df = pd.DataFrame(final_json['Label'])
+
+mfcc_df = mfcc_df_mean.merge(mfcc_df_var, how='left', left_index=True, right_index=True)
+
+mfcc_df = mfcc_df.merge(sc_df, how='left', left_index=True, right_index=True)
+
+new_column_names = ['Column' + str(i+1) for i in range(len(mfcc_df.columns))]
+
+mfcc_df.columns = new_column_names
+          </code>
+          </pre>
+          <div class="text1">
+The code block above performs several data transformations to prepare it for training. Specifically, it calculates the mean and variance of each frequency band in every song. This downsampling is necessary because the dataset’s array shape is (n_songs, n_mfcc, t), which is a 3D array. To train the model, we need the dataset to be a 2D array . These transformations result in an array of size (n_songs, n_features). Additionally, the code renames each column and creates two dataframes: mfcc_df for the features (X) and label_df for the labels (y).
+          </div>
+          <div class="subheader1">Understand the Data</div>
+        <div class="text1">
+          We conduct a PCA analysis to better understand the dimensionality
+          of our features, and if there are variances between artists that
+          we can be confident in.
+        </div>
+        <img
+          src="/static/pictures/PCA.png"
+          alt="PCA"
+        />
+
+      </div>
+      <div class="col1">
+        <div class="text1">
+          We also build a correlation matrix to understand highly correlated features, and where we may be able to be more specific with feature selection.
+      </div>
+        
+        <img 
+        src="/static/pictures/Corre.png" 
+        alt="Corre"
+        >
+        <div class="text1">
+            As we are analyzing audio files, we can assume that the features exhibit a strong temporal nature and are highly correlated with adjacent features. We can extract every-other feature to get rid of multicolinearity in the dataset, but this ends up halving our feature set resulting in a worse testing accuracy. 
+        </div>
+        <div class="subheader1">Model Selection</div>
+        <div class="text1">We attempt several ML models (Support Vector Machine, Random Forest, KNN, and Multi-Layer Perceptron) to understand which performs the best. MLP was consistently above all others with an average train/test accuracy of ~80%.</div>
+        <img src="/static/pictures/Models.png" alt=""
+        alt="Models"
+        >
+        <div class="text1">
+          The structure of the MLP is simple with one hidden layer of 100 nodes, a RELU activation function, and a softmax output layer for multiclass output. 
+          The input values are scaled using a standard scaler, and the model trains over 50 epochs.
+        </div>
+      </div>
+      <div class="col1">
+        <div><h6>Choose your model:</h6></div>            
+        <select id="myPicklist" onchange="handlePicklistChange()">
+            <option value="RF">Random Forest</option>
+            <option value="SVM">Support Vector Machine</option>
+            <option value="KNN">K-Nearest Neighbors</option>
+            <option value="MLP">Multi-Layer Perceptron</option>
+          </select>
+          <div>
+            <img src="/static/pictures/MLP.png" 
+            alt="Image" 
+            id="myImage"
+            >
+          </div>
+          <div class="text1">
+            We can see that the MLP classifier is more confident in it's predictions whereas the other models make more low-probability predictions.  
+           We can then look to understand where the model was inaccurately classifying files.
+          </div>
+        <div class="subheader1">Results & Implimentation</div>
+
+        <div class="text1">
+          Finally, we need to implement some logic to filter out lower confidence predictions from our model, and determine if the song is artificial or not. We wouldn’t want to feed a prediction to the user about a song if no class (artist) has a probability over 50%…
+        </div>
+        <pre>
+          <code class="language-python">
+from ShazamAPI import Shazam
+from pydub import AudioSegment
+import time
+
+
+def ShazamSong(file_path):
+    audio = AudioSegment.from_file(file_path)
+    start_time = 30000  
+    end_time = len(audio)  
+    trimmed_audio = audio[start_time:end_time]
+    trimmed_audio.export(file_path)
+
+    mp3_file_content_to_recognize = open(file_path, 'rb').read()
+    shazam = Shazam(mp3_file_content_to_recognize)
+    recognize_generator = shazam.recognizeSong()
+
+    try:
+        result = next(recognize_generator)
+        artist = result[1]['track']['subtitle']
+        return artist
+    except (StopIteration, KeyError):
+        return None
+          </code>
+          </pre>
+          <div class="text1">
+            First we need to determine if an uploaded song is in Shazam’s catalogue, and if it is legitimately by one of the artists we have trained. The function we define takes a file path as an argument and will use a reverse engineered ShazamAPI to identify the song.
+            Once we have the potential artist that Shazam identified, we can run a sample through the model and take the maximum probability of the probability distribution (0–8) to see if the model was confident in classifying any artist from the MFCC and Spectral Contrast extraction.
+            This last piece of code generates output to the user. We wrap these prompts in an OpenAI ‘davinci’ model so that the responses to the user are different and conversational. 
+          </div>
+          <pre>
+            <code class="language-python">
+if max_proba >= 50 and (Shazam_Artist != 'None' and ''.join(keys) in Shazam_Artist):
+response = openai.Completion.create(
+engine='text-davinci-003',  
+prompt='A user just uploaded an audio file to my web app.' \
+'Tell them the song is by {} and it is not fake and not artificially generated. '\
+'Make it casual and brief.'.format(Shazam_Artist, Shazam_Artist), 
+
+max_tokens=50  
+)
+paragraph = response.choices[0].text.strip()  
+print(paragraph)
+
+
+if max_proba >= 50 and (''.join(keys) not in Shazam_Artist or Shazam_Artist == 'None'):
+response = openai.Completion.create(
+    engine='text-davinci-003',  
+    prompt='A user just uploaded an audio file to my web app. 
+    Tell them the song is by {} and that it is fake, and artificially generated. 
+    Make it casual and brief.'.format(keys[0], keys[0]), 
+    max_tokens=50 
+)
+paragraph = response.choices[0].text.strip()  
+print( paragraph)
+            </code>
+            </pre>
+            <div style="height: 20px;"></div>
+        <div class="subheader1">Improvements & Shortcomings 
+        </div>
+        <div class="text1">
+            I am using the whole song, production included, to classify an artist’s voice. The ideal method would be to use a vocal separator to extract the vocals and train a model on that stem. This would improve accuracy, I think, dramatically. I have seen a few good vocal separator API’s (spleeter by Deezer in particular), so the next step would be to implement this into the model.
+            General feature extraction may be improved as well. I experimented with several preprocessing techniques (EQ, pre-emphasis), but none of them yielded a better performance for the model. More experimentation in this section may help overall model performance.
+            The model has trouble identifying multiple artists. Songs with featured artists may decrease confidence in the model and ultimately not generate an output to the user.
+        </div>
+            <div class="subheader1">Resources</div>
+            <div style="height: 10px"></div>
+          </div class='text1'>
+       <a href="https://smullins.pythonanywhere.com/">Final Product </a>
+       <div style="height: 10px"></div>
+          <a href="https://github.com/smullins998/SongSpy">Github Repository</a>
+          <div style="height: 10px"></div>
+          <a href="https://github.com/smullins998/SongSpy/blob/main/ArtistClassifier.ipynb">Notebook File </a> 
+    </div>
+
+
+</div>
+  {% endblock %}
