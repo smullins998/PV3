@@ -71,10 +71,10 @@ for i in tqdm(ticker_list):
      </div>
      <ul>
       <li>
-       <p>Std </p>  < 5% & <p> Trading Days </p>   > 400
+       <p>Std </p>  < 5% & <p> Trading Days > 400 </p>   
       </li>
       <li>
-        <p>Single-Day return </p>  < -10%
+        <p>Single-Day return < -10% </p>  
       </li>
      </ul>
      <pre>
@@ -109,31 +109,38 @@ RET_df = pd.DataFrame({'Date': Date, 'Ticker': Ticker, 'Return': ret, 'NextRetur
       </div>
       <ul>
         <li>
-        <p>Z  </p> = (X - u) / (std / sqtr(n))
-      </li>
-    
-      <li>
-        <p>P_val  </p> = 1 - norm.cdf(z)
-      </li>
-        <li>
-        <p>Sample Mean: </p>0.331 %
+          <p>Z = (X - u) / (std / sqtr(n))</p>
         </li>
+      
         <li>
-        <p>Sample Std:</p>   3.321  %
+          <p>P_val = 1 - norm.cdf(z)</p>
         </li>
+      
         <li>
-          <p>Population Mean: </p>  0.061 %
+          <p>Sample Mean: 0.331%</p>
         </li>
+      
         <li>
-          <p>Population Std: </p> 2.229 % 
+          <p>Sample Std: 3.321%</p>
         </li>
+      
         <li>
-          <p>Z-score: </p> 7.126 
+          <p>Population Mean: 0.061%</p>
         </li>
+      
         <li>
-          <p>P-val: </p> 0.1 %
+          <p>Population Std: 2.229%</p>
+        </li>
+      
+        <li>
+          <p>Z-score: 7.126</p>
+        </li>
+      
+        <li>
+          <p>P-val: 0.1%</p>
         </li>
       </ul>
+      
       <div class="text1">
         Looking at the sample's standard deviation, this strategy is very risky, with 95% of daily returns ranging from +7% to -6%, but the model also tells us that the difference between the two means is significant - the strategy is different from taking a random sample of the population - and we can reject the null hypothesis and say that there is a recovery in stocks which decline heavily.
       </div>
@@ -156,13 +163,13 @@ RET_df = pd.DataFrame({'Date': Date, 'Ticker': Ticker, 'Return': ret, 'NextRetur
       </div>
     <ul>
       <li>
-    <p>Alpha </p> .30%
+    <p>Alpha .30% </p> 
       </li>
       <li>
-    <p>Beta </p>  -.15
+    <p>Beta  -.15</p>  
       </li>
       <li>
-        <p>P-Val </p> .76
+        <p>P-Val .76 </p> 
       </li>
    </ul>
     </div>
@@ -279,6 +286,29 @@ def sell_strategy(Sell_df):
 <div class="text1">
     This continues to prove random walk and the difficulty creating a profitable strategy trading equities. This also makes me increasingly skeptical about the statistical test we performed, and how it may have lacked rigor. The Z-score for our sample returns was 7, which is very convincing in theory, but it seems that empiricism, or a bottom-up strategy, would perform better as we see very random returns from this strategy. This is, at least, the case for a simple equity trading strategy which may lack some complexity.  
 </div>
+
+
+<style>
+
+  .text1 {
+    font-size: 18px;
+  }
+
+  ul,li,p {
+    text-align: center;
+    line-height: 1em;
+  }
+  li {
+    display: inline;
+  }
+
+  p {
+    font-weight: bold;
+  }
+
+  
+
+</style>
 
 
   {% endblock %}
