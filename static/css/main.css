@@ -316,7 +316,7 @@ svg {
   */
 
   .text1, li, ul>li>p {
-    line-height: 2em;
+    line-height: 1em;
     padding-bottom: .2em;
     font-weight: 400;
     display: block;
@@ -324,7 +324,9 @@ svg {
     margin-block-end: 1em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
-    color: #555553;}  
+    color: #555553;
+    font-weight: bold;
+  }  
 
   h2, h5, h2>a {
     padding-bottom: 15px;
@@ -443,4 +445,5 @@ PORTFOLIO SECTION
 video {
   width: 100%;
   height: auto;
+  border-radius: 5px;
 }
