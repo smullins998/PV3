@@ -101,7 +101,7 @@
               Fordham University. My passion lies in exploring the intricacies
               of Machine Learning, Audio/DSP, and Quantitative Analysis.
             </p>
-            <br/>
+            <br />
             <p>
               Beyond the tools and techniques, it's my innate attention to
               detail, rapid assimilation of new concepts, and a keen analytical
@@ -112,13 +112,19 @@
               collaborative or solo, has been a testament to my undying
               commitment and skillset in this expansive field of study.
             </p>
-            <br>
-            <p>For fun - 
-              <a href="https://open.spotify.com/artist/4bc6P48hOJJqMUlrDyAPYI?si=8oD59LsxTauc5eR5-Z0HQw" style="color:black">Music</a> 
-              <a href="" style="color:black; text-decoration:none;">, Python, Tennis </a> 
-
+            <br />
+            <p>
+              For fun -
+              <a
+                href="https://open.spotify.com/artist/4bc6P48hOJJqMUlrDyAPYI?si=8oD59LsxTauc5eR5-Z0HQw"
+                style="color: black"
+                >Music</a
+              >
+              <a href="" style="color: black; text-decoration: none"
+                >, Python, Tennis
+              </a>
             </p>
-            <br>
+            <br />
           </div>
         </div>
         <div class="svg-div">
@@ -166,9 +172,19 @@
         </div>
       </div>
     </section>
-<!-- PORTFOLIO SECTION -->
+    <!-- PORTFOLIO SECTION -->
     <div class="full-portfolio">
       <section class="project_section">
+        <div class="project_container">
+          <a href="{{ url_for('proj_speech') }}">
+            <video loop autoplay muted>
+              <source src="/static/pictures/speechgif.mp4" type="video/mp4" />
+            </video>
+          </a>
+          <div class="project_description">
+Demographic Inference From Speech Characteristics
+          </div>
+        </div>
         <div class="project_container">
           <a href="{{ url_for('proj_songspy') }}">
             <video loop autoplay muted>
@@ -192,11 +208,11 @@
           <div class="project_description">
             ReverseMomentum: Adverse-Event Impact on Equities
           </div>
+        
         </div>
       </section>
     </div>
 
     {% endblock %}
-
   </body>
 </html>

@@ -1,0 +1,27 @@
+{% extends "main.html" %} {% block sidebarstart %}
+
+<style>
+  .cvdiv {
+    margin: 80px auto;
+    margin-top: 85px;
+    width: 80vw;
+    height: 140vh;
+    display: block; 
+  }
+
+  embed {
+    height: inherit;
+    width: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="cvdiv">
+  <embed
+    src="/static/DMProject.pdf#toolbar=0"
+    type="application/pdf"
+  />
+</div>
+
+{% endblock %}

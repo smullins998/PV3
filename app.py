@@ -26,6 +26,11 @@ def proj_songspy():
 def proj_reversemomentum():
     return render_template('proj_reversemomentum.html')
 
+@app.route('/proj_speech')
+def proj_speech():
+    return render_template('proj_speech.html')
+
+
 @app.route('/cv')
 def cv():
     return render_template('cv.html')

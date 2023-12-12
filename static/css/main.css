@@ -401,6 +401,7 @@ PORTFOLIO SECTION
  .full-portfolio {
   display: flex;
   flex-direction: column;
+  text-align: center;
   position: relative;
   animation: fadeIn 1s ease-in-out forwards;
 
@@ -412,19 +413,18 @@ PORTFOLIO SECTION
   height: 60%;
   margin-top: 0px;
   text-align: center;
+  display: inline-block;
 
 }
 
 .project_container {
-  width: 30vw;
-  max-width: 300px;
+  width: 28vw;
+  max-width: 280px;
   min-width: 150px;
-  height: auto; 
-  margin: 20px;
-  display: inline-block;
+  margin: 25px;
   vertical-align: top;
   position: relative; /* Add position relative */
-
+  display: inline-block;
 }
 
 .project_description {
@@ -432,7 +432,7 @@ PORTFOLIO SECTION
   height: 60px;
   margin-top: 50px;
   padding-top: 7px;
-  font-size: clamp(.8rem, 2.3vw, 1.3em); /* Adjust the values as needed */
+  font-size: clamp(.7rem, 2.3vw, 1.3em); /* Adjust the values as needed */
   font-family: Inter,sans-serif;
   position: relative; /* Add position absolute */
   bottom: 0; /* Align descriptions to the bottom of the containers */
@@ -442,8 +442,9 @@ PORTFOLIO SECTION
   margin-bottom: 5px;
 }
 
-video {
+video, iframe{
   width: 100%;
   height: auto;
   border-radius: 5px;
 }
+
