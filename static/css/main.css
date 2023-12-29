@@ -448,3 +448,7 @@ video, iframe{
   border-radius: 5px;
 }
 
+.project_container:hover {
+  transform: scale(1.02);
+  transition-duration: .4s;
+}
